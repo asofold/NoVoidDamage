@@ -20,7 +20,10 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class NoVoidDamage extends JavaPlugin implements Listener{
 	/** Ok to teleport on.*/
-	final HashSet<Integer> okBlocks = new HashSet<Integer>();
+	final HashSet<Integer> safeStand = new HashSet<Integer>();
+	
+	/** Ok to teleport into.*/
+	final HashSet<Integer> safeTransparent = new HashSet<Integer>();
 	
 	public NoVoidDamage(){
 		super();
@@ -39,7 +42,18 @@ public class NoVoidDamage extends JavaPlugin implements Listener{
 				128, 129, 130, 133, 134,135,137,138,
 				
 		}){
-			okBlocks.add(x);
+			safeStand.add(x);
+		}
+		
+		for (int x : new int[]{
+				6, 27, 28, 26,
+				31, 30, 32, 37, 38, 39, 40,
+				50, 55, 59, 63, 64, 65, 66, 68, 69, 
+				71, 75, 76, 77 , 78, 83, 93, 94,
+				104, 105, 106, 115, 117, 127,
+				
+		}){
+			safeTransparent.add(x);
 		}
 	}
 	
@@ -62,21 +76,30 @@ public class NoVoidDamage extends JavaPlugin implements Listener{
 		if (!chunk.isLoaded()) chunk.load();
 		final World world = loc.getWorld();
 		final Block block = world.getHighestBlockAt(loc.getBlockX(), loc.getBlockZ());
-		final int id = block.getTypeId();
-		if (okBlocks.contains(id)){
-			teleportSafe(player, block.getRelative(BlockFace.UP).getLocation());
+		final Location target = getSafeLocation(player, block);
+		if (target == null){
+			teleport(player, player.getWorld().getSpawnLocation());
 			checkKick(player);
-			return;
 		}
-		else if (id == 0){
-			if (okBlocks.contains(block.getRelative(BlockFace.DOWN).getTypeId())){
-				teleportSafe(player, block.getLocation());
-				checkKick(player);
-				return;
-			}
+		else{
+			teleportSafe(player, target);
+			checkKick(player);
 		}
-		teleport(player, player.getWorld().getSpawnLocation());
-		checkKick(player);
+	}
+
+	/**
+	 * Assumes that above the location there is enough air / ok to tp on space. 
+	 * @param block
+	 * @return
+	 */
+	private Location getSafeLocation(final Player player, Block block) {
+		while (block.getY() > 0){
+			final int id = block.getTypeId();
+			if (safeStand.contains(id)) return new Location(block.getWorld(), 0.5 + block.getX(), 1.0 + block.getY(), 0.5 + block.getZ());
+			else if (safeTransparent.contains(id)) block = block.getRelative(BlockFace.DOWN);
+			else return null;
+		}
+		return null;
 	}
 
 	private void checkKick(Player player) {
