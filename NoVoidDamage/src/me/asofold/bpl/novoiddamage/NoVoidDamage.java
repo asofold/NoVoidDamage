@@ -25,6 +25,8 @@ public class NoVoidDamage extends JavaPlugin implements Listener{
 	/** Ok to teleport into.*/
 	final HashSet<Integer> safeTransparent = new HashSet<Integer>();
 	
+	final HashSet<String> exemptFall = new HashSet<String>();
+	
 	public NoVoidDamage(){
 		super();
 		for (int x : new int[]{
@@ -66,11 +68,26 @@ public class NoVoidDamage extends JavaPlugin implements Listener{
 	@EventHandler(priority=EventPriority.LOWEST, ignoreCancelled=true)
 	final void onDamage(final EntityDamageEvent event){
 		if (event.getEntityType() != EntityType.PLAYER) return;
-		if (event.getCause() != DamageCause.VOID) return;
-		final Entity entity = event.getEntity();
-		if (!(entity instanceof Player)) return;
-		event.setCancelled(true);
+		if (event.getCause() == DamageCause.FALL)
+			if (checkFall(event.getEntity())) event.setCancelled(true);
+		if (event.getCause() == DamageCause.VOID) 
+			if (checkVoid(event.getEntity())) event.setCancelled(true);
+		
+	}
+
+	private final boolean checkFall(final Entity entity) {
+		if (!(entity instanceof Player)) return false;
 		final Player player = (Player) entity;
+//		System.out.println("fall: " + player.getTicksLived());
+		if (exemptFall.remove(player.getName())) return true;
+		else return false;
+	}
+
+	private final boolean checkVoid(final Entity entity) {
+		if (!(entity instanceof Player)) return false;
+		final Player player = (Player) entity;
+//		System.out.println("void: " + player.getTicksLived());
+		exemptFall.add(player.getName());
 		final Location loc = player.getLocation();
 		final Chunk chunk = loc.getChunk();
 		if (!chunk.isLoaded()) chunk.load();
@@ -85,6 +102,8 @@ public class NoVoidDamage extends JavaPlugin implements Listener{
 			teleportSafe(player, target);
 			checkKick(player);
 		}
+//		player.setFallDistance(0); // <- not good (NoCheatPlus)
+		return true;
 	}
 
 	/**
@@ -111,7 +130,10 @@ public class NoVoidDamage extends JavaPlugin implements Listener{
 
 	private void teleportSafe(Player player, Location location) {
 		if (!teleport(player, location)){
-			teleport(player, player.getWorld().getSpawnLocation());
+			Location spawnLoc =  player.getWorld().getSpawnLocation();
+			Location loc = getSafeLocation(player, spawnLoc.getBlock().getRelative(BlockFace.UP));
+			if (loc == null) loc = spawnLoc;
+			teleport(player, loc);
 		}
 	}
 
