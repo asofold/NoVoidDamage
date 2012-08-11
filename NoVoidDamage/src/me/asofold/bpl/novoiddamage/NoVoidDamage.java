@@ -131,8 +131,11 @@ public class NoVoidDamage extends JavaPlugin implements Listener{
 	private void teleportSafe(Player player, Location location) {
 		if (!teleport(player, location)){
 			Location spawnLoc =  player.getWorld().getSpawnLocation();
-			Location loc = getSafeLocation(player, spawnLoc.getBlock().getRelative(BlockFace.UP));
-			if (loc == null) loc = spawnLoc;
+			Location loc = getSafeLocation(player, spawnLoc.getBlock().getRelative(BlockFace.UP)); // not that much safe.
+			if (loc == null){
+				loc = getSafeLocation(player, spawnLoc.getWorld().getHighestBlockAt(spawnLoc));
+				if (loc == null) loc = spawnLoc;
+			}
 			teleport(player, loc);
 		}
 	}
