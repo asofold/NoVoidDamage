@@ -1,0 +1,6 @@
+name: NoVoidDamage
+main: me.asofold.bpl.novoiddamage.NoVoidDamage
+version: 0.0.0
+# database: false
+# load: startup
+author: asofold
