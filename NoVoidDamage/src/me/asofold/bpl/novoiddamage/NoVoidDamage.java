@@ -145,9 +145,16 @@ public class NoVoidDamage extends JavaPlugin implements Listener{
 //		System.out.println("void: " + player.getTicksLived());
 		exemptFall.add(player.getName());
 		final Location loc = player.getLocation();
+		final World world = loc.getWorld();
+		final String worldName = world.getName();
+		if (settings.excludeExact.contains(worldName)) return false;
+		else{
+			for (final String suffix : settings.excludeSuffix){
+				if (worldName.endsWith(suffix)) return false;
+			}
+		}
 		final Chunk chunk = loc.getChunk();
 		if (!chunk.isLoaded()) chunk.load();
-		final World world = loc.getWorld();
 		final Block block = world.getHighestBlockAt(loc.getBlockX(), loc.getBlockZ());
 		final Location target = getSafeLocation(player, block);
 		if (target == null){
