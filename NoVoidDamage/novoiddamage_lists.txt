@@ -1,0 +1,35 @@
+No Void Damage - lists
+-----------------------------------
+
+FEATURES
+-------------------------
+
+* Prevent damage by the void for players, teleport to a safe location above
+    or to the worlds spawn location, if possible. 
+    Prevents one time fall damage on teleporting.
+* Log teleports.
+* Exclude worlds by exact name or by a suffix.
+    By default worlds ending on "_the_end" are excluded from checks.
+* Configuration: 
+    If to log, which worlds to exclude.
+* Reload command:
+    novoiddamage reload
+    needs: novoiddamage.reload or op.
+
+
+
+
+
+
+
+
+VERSION HISTORY
+------------------------------------------------------
+
+(0.3.0)
+- (add) Exclusions of worlds by exact name and by suffix (defaults o the suffix: '_the_end').
+- (add) Logging for all teleports, respecting configuration.
+- (add) Configuration + reload command (novoiddamage.reload/novoiddamage reload).
+- (add) compatlayer for configuration.
+
+(0.2.0) [Version on BukkitDev]
