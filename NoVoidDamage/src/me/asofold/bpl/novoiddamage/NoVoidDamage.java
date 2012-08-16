@@ -1,6 +1,12 @@
 package me.asofold.bpl.novoiddamage;
 
+import java.io.File;
 import java.util.HashSet;
+
+import me.asofold.bpl.novoiddamage.config.Settings;
+import me.asofold.bpl.novoiddamage.config.compatlayer.CompatConfig;
+import me.asofold.bpl.novoiddamage.config.compatlayer.CompatConfigFactory;
+import me.asofold.bpl.novoiddamage.config.compatlayer.ConfigUtil;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
@@ -8,6 +14,8 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -26,6 +34,8 @@ public class NoVoidDamage extends JavaPlugin implements Listener{
 	final HashSet<Integer> safeTransparent = new HashSet<Integer>();
 	
 	final HashSet<String> exemptFall = new HashSet<String>();
+	
+	private final Settings settings = new Settings();
 	
 	public NoVoidDamage(){
 		super();
@@ -62,7 +72,53 @@ public class NoVoidDamage extends JavaPlugin implements Listener{
 	@Override
 	public void onEnable() {
 		getServer().getPluginManager().registerEvents(this, this);
+		loadSettings();
 		super.onEnable();
+	}
+	
+	public void loadSettings(){
+		CompatConfig cfg = CompatConfigFactory.getConfig(new File(getDataFolder(), "config.yml"));
+		cfg.load();
+		if (ConfigUtil.forceDefaults(Settings.getDefaultConfig(), cfg)) cfg.save();
+		settings.fromConfig(cfg);
+	}
+	
+	@Override
+	public boolean onCommand(CommandSender sender, Command command,
+			String label, String[] args) {
+		if (command != null) label = command.getLabel();
+		label = label.trim().toLowerCase();
+		int len = args.length;
+		if (label.equals("novoiddamage")) return onManageCommand(sender, args, len);
+		return false;
+	}
+
+	private boolean onManageCommand(CommandSender sender, String[] args, int len) {
+		String cmd = null;
+		if (len > 0) cmd = args[0].trim().toLowerCase();
+		if (len == 1 && cmd.equals("reload")){
+			if (!checkPermission(sender, "novoiddamage.reload")) return true;
+			loadSettings();
+			sender.sendMessage("[NoVoidDamage] Settings reloaded.");
+			return true;
+		}
+		return false;
+	}
+	
+	public static final boolean hasPermission(final CommandSender sender, final String permission){
+		return sender.isOp() || sender.hasPermission(permission);
+	}
+	
+	/**
+	 * Check and message on failure.
+	 * @param sender
+	 * @param permission
+	 * @return
+	 */
+	public static final boolean checkPermission(final CommandSender sender, final String permission){
+		if (hasPermission(sender, permission)) return true;
+		sender.sendMessage("You don't have permission.");
+		return false;
 	}
 
 	@EventHandler(priority=EventPriority.LOWEST, ignoreCancelled=true)
@@ -141,9 +197,12 @@ public class NoVoidDamage extends JavaPlugin implements Listener{
 	}
 
 	private boolean teleport(Player player, Location location) {
+		Location pLoc = player.getLocation();
 		if (!location.getChunk().isLoaded()) location.getChunk().load();
 		final Block block = location.getBlock().getRelative(BlockFace.DOWN);
 		if (player.isOnline()) player.sendBlockChange(block.getLocation(), block.getTypeId(), block.getData());
-		return player.teleport(location);
+		boolean res =  player.teleport(location);
+		if (res && settings.log) getLogger().info("[NoVoidDamage] Teleport player " + player.getName()+ " from " + pLoc.toString() + " to " + location);
+		return res;
 	}
 }

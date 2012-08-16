@@ -4,3 +4,9 @@ version: 0.3.0
 # database: false
 # load: startup
 author: asofold
+
+
+commands:
+  novoiddamage:
+    description: "Manage the plugin No Void Damage (reload)."
+    usage: "novoiddamage ... for: reload"
